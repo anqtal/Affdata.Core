@@ -58,8 +58,11 @@ float worldX = ArcCoordinates.ArcXToWorld(x);
 三个目录分别维护各自的 Git 仓库。共享算法只在 Core 中修改和提交；
 Edit、Play 提交自己的适配代码及包依赖。换机器时将三个仓库克隆到同一父目录。
 本地包直接使用 Core 工作目录的内容，开发时无需复制代码或 DLL。
-将来发布 Core 的远程仓库后，可把 UPM 依赖改为固定 tag 或提交的 Git URL。
+远程仓库：[anqtal/Affdata.Core](https://github.com/anqtal/Affdata.Core)（当前为私有仓库）。
+每次提交后立即推送当前分支；首次推送使用 `git push -u origin HEAD`，
+之后使用 `git push`。具体规则见 [AGENTS.md](AGENTS.md)。
+将来发布包时，可把 UPM 依赖改为固定 tag 或提交的 Git URL。
 
-当前尚未配置远程仓库或发布包。迁入代码的来源及 MIT 许可见
+当前尚未发布包。迁入代码的来源及 MIT 许可见
 [Third Party Notices.md](<Third Party Notices.md>)；
 整个包的发布许可证需在正式开源前确定。
