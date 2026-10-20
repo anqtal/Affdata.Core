@@ -14,18 +14,27 @@ namespace Affdata.Core.Geometry
         // Slide geometry is shared in NoteMeshDefinitions.Slide; chart sampling, render
         // batching and editor picking state stay in clients.
         public const float SfxArcTapScale = 4.2f;
+        public const float TapWidth = 3.82f;
+        public const float HoldWidth = 3.825f;
+        public const float ArcShadowHeight = .05f;
+        public const float ArcTapShadowHeight = .06f;
+        public const float ArcTapShadowWidth = 4.25f;
+        public const float ArcTapShadowDepth = 1.2f;
+        public const float HeightIndicatorWidth = 1.2f;
+        public const float HeightIndicatorFloor = ArcShadowHeight;
 
-        // Ordinary ArcTap retains the Affdata centre at y = -.5. project-arc combines
-        // RenderArcNote::placeArcTaps (-50) and RenderArcTapNote::init (+5), giving -.45.
-        // SFX ArcTap already uses that reference centre and its 420/100 model scale.
-        public static readonly Vector3 ArcTapCenter = new Vector3(0, -.5f, -.6f);
+        // project-arc combines the logical anchor at -50 with the model's +5 offset.
+        // Keep the anchor for connections/hit feedback; both visible model centres are -.45.
+        public const float ArcTapAnchorYOffset = -.5f;
+        public static readonly Vector3 ArcTapCenter = new Vector3(0, -.45f, -.6f);
         public static readonly Vector3 SfxArcTapCenter = new Vector3(0, -.45f, -.6f);
 
-        // Planar in both implementations. This template uses y = 0; project-arc's
-        // Classes/game/render/ArcSegment.cpp::updateQuads projects the shadow to y = .05.
+        // Match Classes/game/render/ArcSegment.cpp::updateQuads: project to y = .05.
+        // Callers scale X/Z only; scaling Y by the Arc width would change this height.
         // Slam-shadow deformation and visibility remain caller responsibilities.
         public static Mesh CreateArcShadow() => Make("Arc shadow",
-            new[] { new Vector3(-1,0,0), new Vector3(-1,0,1), new Vector3(1,0,1), new Vector3(1,0,0) },
+            new[] { new Vector3(-1,ArcShadowHeight,0), new Vector3(-1,ArcShadowHeight,1),
+                new Vector3(1,ArcShadowHeight,1), new Vector3(1,ArcShadowHeight,0) },
             new[] { Vector2.zero, Vector2.up, Vector2.one, Vector2.right }, new[] { 0,1,2, 0,2,3 });
 
         // Same two visible triangles as ArcSegment.cpp's collapsed head-cap quads.
@@ -36,22 +45,33 @@ namespace Affdata.Core.Geometry
             new[] { Vector2.zero, Vector2.right, Vector2.one, Vector2.one }, new[] { 0,2,1, 0,3,2 });
 
         // Bottom-centred floor quad. UV orientation matches Play's imported Tap/Hold models.
-        // Classes/game/render/RenderNote.cpp uses Tap width 3.82 and Hold width 3.825.
-        // Play retains 3.8; Edit's default Sprite width is 247/100 * 1.53 = 3.7791.
-        // Tap length is also not unified: project-arc uses trunc(200 + 340*k)/100,
-        // with k depending on distance and speed. Play uses CalculateTapSizeScalar;
-        // Edit uses ArcTapNoteManager's Sprite-height multiplier and editor-camera override.
+        // TapWidth/HoldWidth match Classes/game/render/RenderNote.cpp. Edit normalizes
+        // skin Sprite widths to those values; Play passes them to this plane factory.
+        // Tap length is still client-owned. At forward distance d (world units):
+        // project-arc = trunc(200 + 340*(d/100)*speedFactor)/100, speedFactor in [1,1.5].
+        // Play = 1.5 + 6.25*d/100. Edit's default 64px/100 sprite gives
+        // .64*1.53*(2 + 3.4*1.5*max(0,d/100)); its editor camera uses .64*2.
+        // Edit fixes the factor at 1.5; Play's formula has no explicit speed factor.
+        // Behind the line Play grows again, Edit clamps distance to zero, while
+        // project-arc keeps signed distance. These visual policies are not unified here.
         // Hold length/clipping remains runtime state, not part of this unit-depth template.
-        // Play also uses this factory for the 4.25 x 1.2 ArcTap shadow at y = 0;
-        // project-arc puts that shadow at y = .06 and applies its speedFactor to depth.
         public static Mesh CreateGroundNote(float width, float depth) => Make("Ground note",
             new[] { new Vector3(width/2,0,0), new Vector3(width/2,0,-depth),
                 new Vector3(-width/2,0,-depth), new Vector3(-width/2,0,0) },
             new[] { Vector2.zero, Vector2.up, Vector2.one, Vector2.right }, new[] { 0,1,2, 0,2,3 });
 
-        // With default skins both clients retain width .51 * 2.34 = 1.1934 and floor y = 0.
-        // ArcSegment.cpp instead insets .3 from each side of the 1.8-wide Arc:
-        // width 1.2, from floor y = .05 to the bottom edge of the Arc cross-section.
+        public static Mesh CreateArcTapShadow() => Transform(
+            CreateGroundNote(ArcTapShadowWidth, ArcTapShadowDepth), Vector3.one,
+            new Vector3(0, ArcTapShadowHeight, 0), Vector2.one, Vector2.zero);
+
+        // RenderNote.cpp: clamp(1.5 / abs(msPerUnit / .1), 1, 1.5).
+        // After the 1/100 world conversion this is abs(world units/second) * .015.
+        public static float ArcTapShadowDepthScale(float worldUnitsPerSecond)
+            => Mathf.Clamp(Mathf.Abs(worldUnitsPerSecond) * .015f, 1f, 1.5f);
+
+        // Unit, top-anchored template. Callers use HeightIndicatorWidth and stretch
+        // from HeightIndicatorFloor to the Arc cross-section's bottom edge, matching
+        // ArcSegment.cpp's .3 inset on each side of the 1.8-wide Arc.
         public static Mesh CreateHeightIndicator() => Make("Height indicator",
             new[] { new Vector3(.5f,-1,0), new Vector3(.5f,0,0), new Vector3(-.5f,0,0), new Vector3(-.5f,-1,0) },
             new[] { Vector2.zero, Vector2.up, Vector2.one, Vector2.right }, new[] { 0,1,2, 0,2,3 });
@@ -153,7 +173,7 @@ namespace Affdata.Core.Geometry
             // assets/models/tap_l.obj is also a unit cube; after caller transforms both
             // render at 4.4625 x .6 x 1.2 for width = 1. Play applies 4.25 then 1.05 in X.
             // Per-face UVs differ from that OBJ despite matching dimensions; preserve the
-            // existing Affdata mapping. The centre-height difference is documented above.
+            // existing Affdata mapping. The centre height now matches project-arc.
             var p = new[] { new Vector3(.5f,-.5f,.5f), new Vector3(-.5f,-.5f,.5f),
                 new Vector3(.5f,.5f,.5f), new Vector3(-.5f,.5f,.5f), new Vector3(.5f,.5f,-.5f),
                 new Vector3(-.5f,.5f,-.5f), new Vector3(.5f,-.5f,-.5f), new Vector3(-.5f,-.5f,-.5f) };
