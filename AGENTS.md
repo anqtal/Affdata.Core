@@ -3,6 +3,8 @@
 ## 库边界
 
 - Core 是直接依赖 `UnityEngine` 的 Unity UPM 库，不再维持独立纯 .NET 类库入口。
+- 当前范围是 AffdataEdit、AffdataPlay 共用的谱面解析、谱面数据及游戏场景渲染代码。
+- 渲染共用部分包括网格定义、曲线与坐标、分段采样、排序规则、颜色及相关数学计算。
 - 只包含 Affdata 项目共用代码；场景实现、皮肤贴图、渲染队列和游戏单例留在各项目。
 - 网格定义集中在 `NoteMeshDefinitions`，调用方负责缓存和释放生成的 `Mesh`。
 
