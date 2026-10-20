@@ -29,3 +29,12 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Note geometry
+
+`Runtime/Geometry/NoteMeshDefinitions.cs` consolidates the existing AffdataEdit and
+AffdataPlay procedural mesh definitions. `NoteMeshDefinitions.Sfx.cs` contains
+geometry and UV data transcribed from the local project-arc reference assets
+`assets/models/sfx_l.obj` and `sfx_d.obj`, with coordinate conversion and polygon
+triangulation. Texture assets are not included. These model data are not covered
+by the Arcade-plus MIT notice above; no redistribution licence is asserted here.

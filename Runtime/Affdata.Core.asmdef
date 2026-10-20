@@ -5,5 +5,5 @@
   "overrideReferences": true,
   "precompiledReferences": [],
   "autoReferenced": true,
-  "noEngineReferences": true
+  "noEngineReferences": false
 }

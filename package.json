@@ -2,7 +2,7 @@
   "name": "net.affdata.core",
   "version": "0.1.0",
   "displayName": "Affdata.Core",
-  "description": "Engine-independent chart mathematics shared by AffdataEdit and AffdataPlay.",
+  "description": "Shared chart mathematics, colors and note meshes for Affdata Unity projects.",
   "unity": "6000.0",
   "dependencies": {}
 }
