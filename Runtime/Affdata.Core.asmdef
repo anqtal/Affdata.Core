@@ -1,0 +1,9 @@
+{
+  "name": "Affdata.Core",
+  "rootNamespace": "Affdata.Core",
+  "references": [],
+  "overrideReferences": true,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "noEngineReferences": true
+}
