@@ -47,13 +47,8 @@ namespace Affdata.Core.Geometry
         // Bottom-centred floor quad. UV orientation matches Play's imported Tap/Hold models.
         // TapWidth/HoldWidth match Classes/game/render/RenderNote.cpp. Edit normalizes
         // skin Sprite widths to those values; Play passes them to this plane factory.
-        // Tap length is still client-owned. At forward distance d (world units):
-        // project-arc = trunc(200 + 340*(d/100)*speedFactor)/100, speedFactor in [1,1.5].
-        // Play = 1.5 + 6.25*d/100. Edit's default 64px/100 sprite gives
-        // .64*1.53*(2 + 3.4*1.5*max(0,d/100)); its editor camera uses .64*2.
-        // Edit fixes the factor at 1.5; Play's formula has no explicit speed factor.
-        // Behind the line Play grows again, Edit clamps distance to zero, while
-        // project-arc keeps signed distance. These visual policies are not unified here.
+        // Both gameplay cameras use TapLength below. Edit divides the world length by
+        // its skin Sprite height; its orthographic editing camera retains a fixed 2x scale.
         // Hold length/clipping remains runtime state, not part of this unit-depth template.
         public static Mesh CreateGroundNote(float width, float depth) => Make("Ground note",
             new[] { new Vector3(width/2,0,0), new Vector3(width/2,0,-depth),
@@ -64,9 +59,22 @@ namespace Affdata.Core.Geometry
             CreateGroundNote(ArcTapShadowWidth, ArcTapShadowDepth), Vector3.one,
             new Vector3(0, ArcTapShadowHeight, 0), Vector2.one, Vector2.zero);
 
-        // RenderNote.cpp: clamp(1.5 / abs(msPerUnit / .1), 1, 1.5).
-        // After the 1/100 world conversion this is abs(world units/second) * .015.
+        // RenderNote.cpp::RenderTapNote::update, converted to 1/100 world units.
+        // Forward distance is positive before the judgement line and negative after it.
+        // Preserve signed distance and truncation toward zero in reference units.
+        public static float TapLength(float forwardDistance, float worldUnitsPerSecond)
+        {
+            float k = forwardDistance / 100f * NoteSpeedFactor(worldUnitsPerSecond);
+            return (int)(200.0 + 340.0 * k) / 100f;
+        }
+
         public static float ArcTapShadowDepthScale(float worldUnitsPerSecond)
+            => NoteSpeedFactor(worldUnitsPerSecond);
+
+        // RenderNote.cpp shares this factor between Tap length and ArcTap shadow depth:
+        // clamp(1.5 / abs(msPerUnit / .1), 1, 1.5).
+        // After the 1/100 world conversion this is abs(world units/second) * .015.
+        private static float NoteSpeedFactor(float worldUnitsPerSecond)
             => Mathf.Clamp(Mathf.Abs(worldUnitsPerSecond) * .015f, 1f, 1.5f);
 
         // Unit, top-anchored template. Callers use HeightIndicatorWidth and stretch
