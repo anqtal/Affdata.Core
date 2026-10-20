@@ -6,28 +6,61 @@ namespace Affdata.Core.Geometry
     /// <summary>Shared note geometry. Every factory returns a new mesh owned by its caller.</summary>
     public static partial class NoteMeshDefinitions
     {
+        // Compatibility notes below compare against project-arc at 1/100 of its world units.
+        // Reference paths are relative to project-arc. Unless stated otherwise, keep the
+        // existing Affdata appearance; sharing a mesh factory does not also unify cameras,
+        // materials, sorting, clipping or per-note transforms.
+        // Edit uses CreateSprite for skinned planes; Play uses the explicit plane factories.
+        // Chart-dependent Slide surfaces, render batching and editor picking stay in clients.
         public const float SfxArcTapScale = 4.2f;
+
+        // Ordinary ArcTap retains the Affdata centre at y = -.5. project-arc combines
+        // RenderArcNote::placeArcTaps (-50) and RenderArcTapNote::init (+5), giving -.45.
+        // SFX ArcTap already uses that reference centre and its 420/100 model scale.
         public static readonly Vector3 ArcTapCenter = new Vector3(0, -.5f, -.6f);
         public static readonly Vector3 SfxArcTapCenter = new Vector3(0, -.45f, -.6f);
 
+        // Planar in both implementations. This template uses y = 0; project-arc's
+        // Classes/game/render/ArcSegment.cpp::updateQuads projects the shadow to y = .05.
+        // Slam-shadow deformation and visibility remain caller responsibilities.
         public static Mesh CreateArcShadow() => Make("Arc shadow",
             new[] { new Vector3(-1,0,0), new Vector3(-1,0,1), new Vector3(1,0,1), new Vector3(1,0,0) },
             new[] { Vector2.zero, Vector2.up, Vector2.one, Vector2.right }, new[] { 0,1,2, 0,2,3 });
 
+        // Same two visible triangles as ArcSegment.cpp's collapsed head-cap quads.
+        // Retain Affdata's UV seams: Edit uses these UVs, Play flips U and V.
+        // Trace head height retains the .15 versus .14 difference documented below.
         public static Mesh CreateArcHead() => Make("Arc head",
             new[] { new Vector3(0,.5f,0), new Vector3(1,-.5f,0), new Vector3(0,-.5f,1), new Vector3(-1,-.5f,0) },
             new[] { Vector2.zero, Vector2.right, Vector2.one, Vector2.one }, new[] { 0,2,1, 0,3,2 });
 
         // Bottom-centred floor quad. UV orientation matches Play's imported Tap/Hold models.
+        // Classes/game/render/RenderNote.cpp uses Tap width 3.82 and Hold width 3.825.
+        // Play retains 3.8; Edit's default Sprite width is 247/100 * 1.53 = 3.7791.
+        // Tap length is also not unified: project-arc uses trunc(200 + 340*k)/100,
+        // with k depending on distance and speed. Play uses CalculateTapSizeScalar;
+        // Edit uses ArcTapNoteManager's Sprite-height multiplier and editor-camera override.
+        // Hold length/clipping remains runtime state, not part of this unit-depth template.
+        // Play also uses this factory for the 4.25 x 1.2 ArcTap shadow at y = 0;
+        // project-arc puts that shadow at y = .06 and applies its speedFactor to depth.
         public static Mesh CreateGroundNote(float width, float depth) => Make("Ground note",
             new[] { new Vector3(width/2,0,0), new Vector3(width/2,0,-depth),
                 new Vector3(-width/2,0,-depth), new Vector3(-width/2,0,0) },
             new[] { Vector2.zero, Vector2.up, Vector2.one, Vector2.right }, new[] { 0,1,2, 0,2,3 });
 
+        // With default skins both clients retain width .51 * 2.34 = 1.1934 and floor y = 0.
+        // ArcSegment.cpp instead insets .3 from each side of the 1.8-wide Arc:
+        // width 1.2, from floor y = .05 to the bottom edge of the Arc cross-section.
         public static Mesh CreateHeightIndicator() => Make("Height indicator",
             new[] { new Vector3(.5f,-1,0), new Vector3(.5f,0,0), new Vector3(-.5f,0,0), new Vector3(-.5f,-1,0) },
             new[] { Vector2.zero, Vector2.up, Vector2.one, Vector2.right }, new[] { 0,1,2, 0,2,3 });
 
+        // Retain Affdata's 2.56-square base, also used by Edit's normalized Sprite.
+        // project-arc loads img/1080/arc_cap.png (84 px); TrackLayer.cpp::updateArcCaps
+        // scales it by (base + shrink*.5)*4.5. Affdata applies base/shrink directly
+        // to this 2.56-square base, so those source size/scale pairs are not equivalent.
+        // Cap visibility and approach/fade logic remain in the clients; screen size also
+        // depends on each camera.
         public static Mesh CreateArcCap() => Make("Arc cap",
             new[] { new Vector3(1.28f,-1.28f,0), new Vector3(1.28f,1.28f,0),
                 new Vector3(-1.28f,1.28f,0), new Vector3(-1.28f,-1.28f,0) },
@@ -60,6 +93,11 @@ namespace Affdata.Core.Geometry
             return mesh;
         }
 
+        // ArcSegment.cpp::crossSection: solid Arc width/height = 1.8/.9, matching
+        // this template at scale .9. Both clients scale Trace by .15: width/height = .3/.15.
+        // project-arc uses integer 30/4 = 7 for Trace's half-height, giving .3/.14.
+        // Keep the existing difference. Edit uses these UVs and Play flips U; project-arc
+        // assigns sprite UVs separately to faceA/faceB, so UV layout is not a shared baseline.
         public static Mesh CreateArcSegment()
         {
             var mesh = Make("Arc segment",
@@ -76,8 +114,10 @@ namespace Affdata.Core.Geometry
 
         public static Mesh CreateConnectionLine()
         {
-            // Match Play's quad and the old prism's projected width: .05 - (-.025).
-            const float halfWidth = 0.0375f;
+            // TrackLayer.cpp::createArcTapLinks sets a 15-unit-wide planar sprite.
+            // At 1/100 world scale the shared width is .15 (previously .075).
+            // This aligns geometry only; client tint/alpha and group transforms remain local.
+            const float halfWidth = 0.075f;
             return Make("Note connection",
                 new[] { new Vector3(-halfWidth, 0, 0), new Vector3(-halfWidth, 0, 1),
                     new Vector3(halfWidth, 0, 1), new Vector3(halfWidth, 0, 0) },
@@ -109,6 +149,10 @@ namespace Affdata.Core.Geometry
         {
             var b = new Builder();
             // Retain the original cube's face orientation and UV seams.
+            // assets/models/tap_l.obj is also a unit cube; after caller transforms both
+            // render at 4.4625 x .6 x 1.2 for width = 1. Play applies 4.25 then 1.05 in X.
+            // Per-face UVs differ from that OBJ despite matching dimensions; preserve the
+            // existing Affdata mapping. The centre-height difference is documented above.
             var p = new[] { new Vector3(.5f,-.5f,.5f), new Vector3(-.5f,-.5f,.5f),
                 new Vector3(.5f,.5f,.5f), new Vector3(-.5f,.5f,.5f), new Vector3(.5f,.5f,-.5f),
                 new Vector3(-.5f,.5f,-.5f), new Vector3(.5f,-.5f,-.5f), new Vector3(-.5f,-.5f,-.5f) };
@@ -121,6 +165,8 @@ namespace Affdata.Core.Geometry
             return b.Build("ArcTap cube");
         }
 
+        // Shared Affdata Slide extension. project-arc has no corresponding Slide/bracket
+        // implementation to match; retain the existing outline, thickness and atlas UVs.
         public static Mesh CreateSlideBracket()
         {
             var b = new Builder();
