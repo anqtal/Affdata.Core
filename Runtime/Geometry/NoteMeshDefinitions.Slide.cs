@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -8,30 +7,17 @@ namespace Affdata.Core.Geometry
     public static partial class NoteMeshDefinitions
     {
         // Slide has no equivalent in project-arc; this geometry serves Affdata's Falsus-style Slides.
-        // Clients sample their chart curves/timing into rows; Core owns the row interpolation,
+        // Clients sample their chart curves/timing into rows; Core owns the vertex layout,
         // triangle winding and judgement-grid topology. Shadows reuse the surface geometry.
-        // Edit retains two vertices per row and duplicates rows at segment boundaries.
-        // Play retains three vertices per row and shares rows within each chart piece.
+        // Both clients use Edit's two endpoints per row, sharing rows between adjacent
+        // segments within a chart piece. Each segment has two triangles.
         // Their sampling remains different: Edit uses >=5 ms steps capped at ~8192 segments;
         // Play uniformly divides each piece into duration/5 + 1 render segments.
-        // Edit UV0/1/2 = (chart X, time), (strip X, distance), (width, total length).
-        // Play UV0/1/2 = (visual travel, time), (chart X, relative floor), (strip X, width).
-        // UV3/4, colours, picking state and draw batching remain client responsibilities.
-
-        /// <summary>A sampled ribbon endpoint with the client's surface-shader UV payload.</summary>
-        public readonly struct SlideVertex
-        {
-            public readonly Vector3 Position;
-            public readonly Vector2 Uv0, Uv1, Uv2;
-
-            public SlideVertex(Vector3 position, Vector2 uv0, Vector2 uv1, Vector2 uv2)
-            {
-                Position = position;
-                Uv0 = uv0;
-                Uv1 = uv1;
-                Uv2 = uv2;
-            }
-        }
+        // Shared UV0/1/2 = (chart X, time), (strip X, signed visual distance from piece
+        // start), (normalized width, signed total visual length of the piece).
+        // Play's UV3/4 hold batching metadata that Edit sends as per-note properties.
+        // Colours, picking state and draw batching remain client responsibilities.
+        public const float SlideVisualUnitsPerWorldUnit = 1.62f / 8.5f;
 
         /// <summary>
         /// Appends a cross-section and returns its first vertex index. UV lists may be null
@@ -39,43 +25,28 @@ namespace Affdata.Core.Geometry
         /// </summary>
         public static int AppendSlideSurfaceRow(List<Vector3> vertices,
             List<Vector2> uv0, List<Vector2> uv1, List<Vector2> uv2,
-            SlideVertex first, SlideVertex last, int verticesPerRow)
+            Vector3 first, Vector3 last, Vector2 chartRange, float timingProgress,
+            float visualDistance, float visualLength)
         {
-            if (verticesPerRow < 2) throw new ArgumentOutOfRangeException(nameof(verticesPerRow));
             int start = vertices.Count;
-            for (int i = 0; i < verticesPerRow; i++)
+            Vector2 dimensions = new Vector2(Mathf.Abs(chartRange.y - chartRange.x), visualLength);
+            vertices.Add(first);
+            vertices.Add(last);
+            for (int side = 0; side < 2; side++)
             {
-                float t = i / (float)(verticesPerRow - 1);
-                if (i == 0) Add(first);
-                else if (i == verticesPerRow - 1) Add(last);
-                else Add(new SlideVertex(
-                    Vector3.LerpUnclamped(first.Position, last.Position, t),
-                    Vector2.LerpUnclamped(first.Uv0, last.Uv0, t),
-                    Vector2.LerpUnclamped(first.Uv1, last.Uv1, t),
-                    Vector2.LerpUnclamped(first.Uv2, last.Uv2, t)));
+                uv0?.Add(new Vector2(side == 0 ? chartRange.x : chartRange.y, timingProgress));
+                uv1?.Add(new Vector2(side, visualDistance));
+                uv2?.Add(dimensions);
             }
             return start;
-
-            void Add(SlideVertex vertex)
-            {
-                vertices.Add(vertex.Position);
-                uv0?.Add(vertex.Uv0);
-                uv1?.Add(vertex.Uv1);
-                uv2?.Add(vertex.Uv2);
-            }
         }
 
         /// <summary>Joins two equally sized rows; call separately for disconnected chart pieces.</summary>
         public static void AppendSlideSurfaceSegment(List<int> indices,
-            int firstRow, int nextRow, int verticesPerRow)
+            int firstRow, int nextRow)
         {
-            if (verticesPerRow < 2) throw new ArgumentOutOfRangeException(nameof(verticesPerRow));
-            for (int column = 0; column < verticesPerRow - 1; column++)
-            {
-                int a = firstRow + column, b = nextRow + column;
-                indices.Add(a); indices.Add(b); indices.Add(a + 1);
-                indices.Add(a + 1); indices.Add(b); indices.Add(b + 1);
-            }
+            indices.Add(firstRow); indices.Add(nextRow); indices.Add(firstRow + 1);
+            indices.Add(firstRow + 1); indices.Add(nextRow); indices.Add(nextRow + 1);
         }
 
         /// <summary>
