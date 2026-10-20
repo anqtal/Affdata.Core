@@ -4,6 +4,10 @@
 from AffdataEdit's `Assets/Scripts/Gameplay/Utility/ArcAlgorithm.cs`, inherited
 from Arcade-plus. The original project's MIT notice is retained below.
 
+`Runtime/Colors/HexColor.cs` is adapted from the hexadecimal color parsing and
+formatting in AffdataEdit's `Assets/Scripts/Aff/ArcaeaFileFormat.cs`, covered by
+the same project license.
+
 MIT License
 
 Copyright (c) 2020 Schwarzer, yojohanshinwataikei, and other Arcade-plus maintainers

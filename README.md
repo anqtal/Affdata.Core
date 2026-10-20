@@ -7,6 +7,11 @@ AffdataEdit 和 AffdataPlay 共用的纯 C# 核心库。`.NET` 与 Unity UPM 编
 Qi/Qo 相机缓动。进度参数不会自动限制在 `[0, 1]`；未知曲线类型按直线处理，
 与两个项目原有实现一致。项目特有的原版精度模拟、渲染和运行状态仍在各自项目中。
 
+颜色共用代码位于 `Affdata.Core.Colors`：`Rgba32` 表示四个 8 位颜色通道，
+`HexColor` 统一 AFF 的 `#RGB`、`#RGBA`、`#RRGGBB`、`#RRGGBBAA` 解析与输出。
+`Affdata.Core.Chart.ArcColors.GoldTrace` 保存两边共用的金色 Trace 颜色。
+各项目的皮肤配置、专用色板及 Unity 颜色适配保留在各自项目。
+
 ## .NET
 
 目标框架为 `netstandard2.1`，使用 .NET SDK：
