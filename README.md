@@ -8,6 +8,15 @@ AffdataEdit 和 AffdataPlay 共用的 Unity UPM 库，直接依赖 `UnityEngine`
 Qi/Qo 相机缓动。进度参数不会自动限制在 `[0, 1]`；未知曲线类型按直线处理，
 与两个项目原有实现一致。项目特有的原版精度模拟、渲染提交和运行状态仍在各自项目中。
 
+`ArcSampling.FillProgress` 共用 project-arc 的 Arc 分段进度：原始时长小于 1 秒时
+每秒 14 段，否则每秒 7 段，再乘以不小于 1 的 smoothness；用 double 累加进度，
+并单独追加准确终点。连接段可延长到后续 Arc 的开始时间；直线 Trace 默认只用两端点。
+两边的跨 timing 变速选项保留多段采样，坐标精度模式仍由各项目管理。
+`Affdata.Core.Chart.ArcRenderOrder` 共用 Play 的 Arc / Trace 面排序：
+按曲线端点高度、颜色及左右面排序，同优先级使用相同的谱面与分段排序键，
+不按相机距离重排 Arc 面。场景绘制通道和其他 Note 的排序仍由各项目管理。
+Hold 渐隐依赖 Play 的实际判定状态，留在 Play 中，不属于共享库。
+
 颜色共用代码位于 `Affdata.Core.Colors`：`Rgba32` 表示四个 8 位颜色通道，
 `HexColor` 统一 AFF 的 `#RGB`、`#RGBA`、`#RRGGBB`、`#RRGGBBAA` 解析与输出。
 `Affdata.Core.Chart.ArcColors.GoldTrace` 保存两边共用的金色 Trace 颜色。
