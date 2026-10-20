@@ -11,7 +11,8 @@ namespace Affdata.Core.Geometry
         // existing Affdata appearance; sharing a mesh factory does not also unify cameras,
         // materials, sorting, clipping or per-note transforms.
         // Edit uses CreateSprite for skinned planes; Play uses the explicit plane factories.
-        // Chart-dependent Slide surfaces, render batching and editor picking stay in clients.
+        // Slide geometry is shared in NoteMeshDefinitions.Slide; chart sampling, render
+        // batching and editor picking state stay in clients.
         public const float SfxArcTapScale = 4.2f;
 
         // Ordinary ArcTap retains the Affdata centre at y = -.5. project-arc combines

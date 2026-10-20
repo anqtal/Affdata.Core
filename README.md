@@ -16,7 +16,7 @@ Qi/Qo 相机缓动。进度参数不会自动限制在 `[0, 1]`；未知曲线�
 ## 共用网格
 
 `Affdata.Core.Geometry.NoteMeshDefinitions` 集中生成 Arc 段、头部、阴影、ArcTap、
-音效 ArcTap、Tap/Hold 平面、连接线、ArcCap、高度指示器及 Slide 括号。
+音效 ArcTap、Tap/Hold 平面、连接线、ArcCap、高度指示器及 Slide 括号、判定线网格。
 `CreateSprite` 保留皮肤 Sprite 的轮廓、轴心与图集 UV。
 每次工厂调用都会创建新 `Mesh`，调用方负责缓存，并在不再使用时 `Destroy`。
 `Transform` 只用于适配新建网格的坐标及 UV，不应修改已被其他调用方缓存的网格。
@@ -28,6 +28,10 @@ Qi/Qo 相机缓动。进度参数不会自动限制在 `[0, 1]`；未知曲线�
 贴图、材质和渲染队列由各项目管理，不包含在 Core 中。
 连接线宽度同样对齐 project-arc，为 0.15。其余定义沿用两项目现有尺寸和 UV；
 与 project-arc 的已知差异记录在对应工厂方法旁的注释中。
+
+Slide 曲面的截面插值和三角形连接也在 `NoteMeshDefinitions.Slide.cs` 中共用。
+两边提供采样后的端点与 UV；Edit 保留每排 2 个顶点，Play 保留每排 3 个顶点。
+采样时机、谱面状态、材质及渲染提交仍由各项目管理，已有 UV 与采样差异在 Core 注释中说明。
 
 ## Unity UPM
 
