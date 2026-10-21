@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Affdata.Core.Chart
 {
-    /// <summary>Gameplay beat-line times, preserving AffdataPlay's generation rules.</summary>
+    /// <summary>Shared gameplay beat-line times with project-arc's close-line filtering.</summary>
     public static class BeatLineGenerator
     {
         // Input events must be sorted by timing. Non-final intervals exclude the next
@@ -11,6 +11,8 @@ namespace Affdata.Core.Chart
         // Returned times use Math.Round (midpoints to even), as Play did before sharing.
         public static IEnumerable<int> Generate(IReadOnlyList<BeatLineTiming> timingEvents, int audioLength)
         {
+            bool hasPrevious = false;
+            int previousGeneratedTiming = 0;
             for (int i = 0; i < timingEvents.Count; i++)
             {
                 BeatLineTiming timingEvent = timingEvents[i];
@@ -22,7 +24,13 @@ namespace Affdata.Core.Chart
                 double beatLineTiming = timingEvent.Timing;
                 while (last ? beatLineTiming <= endTiming : beatLineTiming < endTiming)
                 {
-                    yield return (int)Math.Round(beatLineTiming);
+                    int timing = (int)Math.Round(beatLineTiming);
+                    // project-arc LogicChart::buildBars compares against the previous
+                    // generated line, even if it was filtered, including across timings.
+                    bool keep = !hasPrevious || (long)timing - previousGeneratedTiming >= 2;
+                    previousGeneratedTiming = timing;
+                    hasPrevious = true;
+                    if (keep) yield return timing;
                     beatIndex++;
                     beatLineTiming = timingEvent.Timing + beatIntervalMs * beatIndex;
                 }
@@ -32,8 +40,8 @@ namespace Affdata.Core.Chart
         private static bool TryGetBeatInterval(BeatLineTiming timingEvent, out double beatIntervalMs)
         {
             // Zero divisor skips the whole interval, including its starting beat line.
-            // Keep Play's positive-BPM cutoff; negative BPM uses its absolute value below.
-            if (timingEvent.Bpm > 10000 || timingEvent.Divisor <= 0)
+            // High BPM is allowed; overly close candidates are filtered by Generate.
+            if (timingEvent.Divisor <= 0)
             {
                 beatIntervalMs = 0;
                 return false;
