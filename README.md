@@ -20,6 +20,12 @@ Qi/Qo 相机缓动。进度参数不会自动限制在 `[0, 1]`；未知曲线�
 不按相机距离重排 Arc 面。场景绘制通道和其他 Note 的排序仍由各项目管理。
 Hold 渐隐依赖 Play 的实际判定状态，留在 Play 中，不属于共享库。
 
+`Affdata.Core.Chart.BeatLineGenerator` 共用 Play 的游戏拍线时间生成规则。
+调用方把按时间排序的 timing 转成 `BeatLineTiming`，并提供音频长度；Core 返回整数毫秒。
+divisor 不大于 0 时跳过整个区间（包括起点）；BPM 为 0、divisor 为正时仅生成起点，
+正 BPM 大于 10000 时跳过区间。保留 Play 的时间取整、最小 1ms 间隔和末段包含音频终点的规则，
+不额外生成开场负时间拍线。位置换算和渲染由各项目管理，Edit 的编辑吸附网格保持独立。
+
 颜色共用代码位于 `Affdata.Core.Colors`：`Rgba32` 表示四个 8 位颜色通道，
 `HexColor` 统一 AFF 的 `#RGB`、`#RGBA`、`#RRGGBB`、`#RRGGBBAA` 解析与输出。
 `Affdata.Core.Chart.ArcColors.GoldTrace` 保存两边共用的金色 Trace 颜色。
