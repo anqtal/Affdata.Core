@@ -11,7 +11,7 @@ namespace Affdata.Core.Geometry
 
         // Positions are in untransformed playfield units (1/100 of project-arc).
         // The caller supplies the Arc's current judge-line point and resets on rebuild/seek.
-        public bool TryGetPosition(int timing, bool clipping, float velocity,
+        public bool TryGetPosition(int timing, bool pastStart, bool clipping, float velocity,
             Vector3 start, float endZ, Vector3 judgementPoint, out Vector3 position)
         {
             if (timing < lastTiming)
@@ -22,6 +22,9 @@ namespace Affdata.Core.Geometry
             lastTiming = timing;
             hasClipped |= clipping;
             clipping = hasClipped;
+
+            // RenderArcNote::update also retires an unheld first segment past the camera.
+            retired |= pastStart && velocity > 0 && endZ > 7f;
 
             if (clipping)
             {
