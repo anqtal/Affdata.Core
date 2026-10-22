@@ -30,6 +30,8 @@ divisor 不大于 0 时跳过整个区间（包括起点）；BPM 为 0、diviso
 颜色共用代码位于 `Affdata.Core.Colors`：`Rgba32` 表示四个 8 位颜色通道，
 `HexColor` 统一 AFF 的 `#RGB`、`#RGBA`、`#RRGGBB`、`#RRGGBBAA` 解析与输出。
 `Affdata.Core.Chart.ArcColors.GoldTrace` 保存两边共用的金色 Trace 颜色。
+`ConnectionLineStyle` 共用 project-arc 的连线颜色与单面透明度 `130/255`，
+暗侧颜色为 `(170, 100, 160)`；客户端不再补偿旧立体连线的前后面透明叠加。
 各项目的皮肤配置、专用色板及 Unity 颜色适配保留在各自项目。
 
 ## 共用网格
@@ -51,6 +53,9 @@ divisor 不大于 0 时跳过整个区间（包括起点）；BPM 为 0、diviso
 两边共用随速度变化的 1～1.5 倍缩放。游戏相机的 Tap 长度也共用 project-arc
 的距离、速度公式及长度取整；Edit 的正交编辑视图保留固定长度。
 剩余尺寸、UV 和运行时差异记录在对应工厂方法旁的注释中。
+
+`HeightIndicatorClipState` 让高度指示器随首段裁剪到判定点，首段越过有方向的
+0.1 裁剪阈值后保持隐藏；客户端提供判定点，并在重建或重置判定时清空状态。
 
 Slide 曲面的顶点和三角形连接也在 `NoteMeshDefinitions.Slide.cs` 中共用，
 统一为 Edit 的每排 2 个端点、每段 2 个三角形，相邻段复用顶点。
