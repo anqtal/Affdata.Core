@@ -29,7 +29,10 @@ divisor 不大于 0 时跳过整个区间（包括起点）；BPM 为 0、diviso
 
 颜色共用代码位于 `Affdata.Core.Colors`：`Rgba32` 表示四个 8 位颜色通道，
 `HexColor` 统一 AFF 的 `#RGB`、`#RGBA`、`#RRGGBB`、`#RRGGBBAA` 解析与输出。
-`Affdata.Core.Chart.ArcColors.GoldTrace` 保存两边共用的金色 Trace 颜色。
+`Affdata.Core.Chart.ArcColors` 共用蓝、红、绿、灰、黑的颜色编号（0～4），
+以及默认高低位色表 `NormalHigh` / `NormalLow`。默认色表含前四种颜色；
+`Fallback` 为黑色，`GetColor` 统一处理负数及超出所提供色表范围的编号。
+`GoldTrace` 保存两边共用的金色 Trace 颜色。
 `ConnectionLineStyle` 共用 project-arc 的连线颜色与单面透明度 `130/255`，
 暗侧颜色为 `(170, 100, 160)`；客户端不再补偿旧立体连线的前后面透明叠加。
 各项目的皮肤配置、专用色板及 Unity 颜色适配保留在各自项目。
